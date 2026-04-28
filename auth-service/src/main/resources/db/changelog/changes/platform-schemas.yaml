@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: platform-000-create-service-schemas
+      author: unik
+      changes:
+        - sql:
+            splitStatements: true
+            sql: |
+              CREATE SCHEMA IF NOT EXISTS auth;
+              CREATE SCHEMA IF NOT EXISTS users;
+              CREATE SCHEMA IF NOT EXISTS events;
+              CREATE SCHEMA IF NOT EXISTS networking;
+              CREATE SCHEMA IF NOT EXISTS ai;

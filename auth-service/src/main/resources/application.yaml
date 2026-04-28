@@ -1,0 +1,60 @@
+server:
+  port: 8081
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: auth-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/events_platform
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: auth
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    default-schema: auth
+    liquibase-schema: public
+  security:
+    oauth2:
+      client:
+        registration:
+          vk:
+            provider: vk
+            client-id: ${VK_CLIENT_ID:__off__}
+            client-secret: ${VK_CLIENT_SECRET:__off__}
+            authorization-grant-type: authorization_code
+            redirect-uri: "${app.oauth2.callback-base-url:http://localhost:8081}/login/oauth2/code/{registrationId}"
+            scope: email
+            client-name: VK
+        provider:
+          vk:
+            authorization-uri: https://oauth.vk.com/authorize
+            token-uri: https://oauth.vk.com/access_token
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+    expiration-ms: ${JWT_EXPIRATION_MS:3600000}
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:5173}
+  oauth2:
+    callback-base-url: ${OAUTH2_CALLBACK_BASE_URL:http://localhost:8081}

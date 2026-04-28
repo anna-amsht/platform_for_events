@@ -11,6 +11,7 @@
     <modules>
         <module>EurekaServer</module>
         <module>api-gateway</module>
+        <module>auth-service</module>
     </modules>
 
     <properties>

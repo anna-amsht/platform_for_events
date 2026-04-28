@@ -1,0 +1,5 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/changes/platform-schemas.yaml
+  - include:
+      file: db/changelog/changes/auth-schema.yaml

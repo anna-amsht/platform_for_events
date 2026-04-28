@@ -1,0 +1,92 @@
+databaseChangeLog:
+  - changeSet:
+      id: auth-001-create-schema
+      author: unik
+      changes:
+        - sql:
+            sql: CREATE SCHEMA IF NOT EXISTS auth
+
+  - changeSet:
+      id: auth-002-users
+      author: unik
+      changes:
+        - createTable:
+            schemaName: auth
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: email
+                  type: varchar(320)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password_hash
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: auth-003-oauth-accounts
+      author: unik
+      changes:
+        - createTable:
+            schemaName: auth
+            tableName: oauth_accounts
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: provider
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: external_user_id
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            schemaName: auth
+            tableName: oauth_accounts
+            columnNames: provider, external_user_id
+            constraintName: uq_oauth_provider_external
+        - addForeignKeyConstraint:
+            baseTableSchemaName: auth
+            baseTableName: oauth_accounts
+            baseColumnNames: user_id
+            constraintName: fk_oauth_user
+            referencedTableSchemaName: auth
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
