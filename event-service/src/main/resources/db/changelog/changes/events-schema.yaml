@@ -1,0 +1,86 @@
+databaseChangeLog:
+  - changeSet:
+      id: events-create-schema
+      author: Codex
+      changes:
+        - sql:
+            sql: CREATE SCHEMA IF NOT EXISTS events
+  - changeSet:
+      id: events-events
+      author: Codex
+      changes:
+        - createTable:
+            schemaName: events
+            tableName: events
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: organizer_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: title, type: varchar(200), constraints: { nullable: false } }
+              - column: { name: description, type: varchar(2000) }
+              - column: { name: location, type: varchar(255) }
+              - column: { name: latitude, type: double }
+              - column: { name: longitude, type: double }
+              - column: { name: starts_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: ends_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - createIndex:
+            schemaName: events
+            tableName: events
+            indexName: idx_events_organizer
+            columns:
+              - column: { name: organizer_id }
+  - changeSet:
+      id: events-invitations
+      author: Codex
+      changes:
+        - createTable:
+            schemaName: events
+            tableName: invitations
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: event_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: invitee_user_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: status, type: varchar(32), constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+        - addUniqueConstraint:
+            schemaName: events
+            tableName: invitations
+            columnNames: event_id, invitee_user_id
+            constraintName: uq_invitations_event_invitee
+        - addForeignKeyConstraint:
+            baseTableSchemaName: events
+            baseTableName: invitations
+            baseColumnNames: event_id
+            constraintName: fk_invitations_event
+            referencedTableSchemaName: events
+            referencedTableName: events
+            referencedColumnNames: id
+            onDelete: CASCADE
+  - changeSet:
+      id: events-registrations
+      author: Codex
+      changes:
+        - createTable:
+            schemaName: events
+            tableName: registrations
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: event_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: user_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: role_name, type: varchar(40), constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+        - addUniqueConstraint:
+            schemaName: events
+            tableName: registrations
+            columnNames: event_id, user_id
+            constraintName: uq_registrations_event_user
+        - addForeignKeyConstraint:
+            baseTableSchemaName: events
+            baseTableName: registrations
+            baseColumnNames: event_id
+            constraintName: fk_registrations_event
+            referencedTableSchemaName: events
+            referencedTableName: events
+            referencedColumnNames: id
+            onDelete: CASCADE
