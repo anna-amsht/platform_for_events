@@ -1,0 +1,161 @@
+databaseChangeLog:
+  - changeSet:
+      id: users-user-profiles
+      author: Anna
+      changes:
+        - createTable:
+            schemaName: users
+            tableName: user_profiles
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: email
+                  type: varchar(320)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: first_name
+                  type: varchar(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: last_name
+                  type: varchar(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: company
+                  type: varchar(160)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: job_title
+                  type: varchar(160)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: city
+                  type: varchar(120)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: avatar_url
+                  type: varchar(500)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: bio
+                  type: varchar(1000)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+        - createIndex:
+            schemaName: users
+            tableName: user_profiles
+            indexName: idx_user_profiles_email
+            columns:
+              - column:
+                  name: email
+
+  - changeSet:
+      id: users-interests
+      author: Anna
+      changes:
+        - createTable:
+            schemaName: users
+            tableName: interests
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(80)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: slug
+                  type: varchar(80)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+        - createIndex:
+            schemaName: users
+            tableName: interests
+            indexName: idx_interests_slug
+            columns:
+              - column:
+                  name: slug
+
+  - changeSet:
+      id: users-user-interests
+      author: Anna
+      changes:
+        - createTable:
+            schemaName: users
+            tableName: user_interests
+            columns:
+              - column:
+                  name: user_profile_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: interest_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            schemaName: users
+            tableName: user_interests
+            columnNames: user_profile_id, interest_id
+            constraintName: pk_user_interests
+        - addForeignKeyConstraint:
+            baseTableSchemaName: users
+            baseTableName: user_interests
+            baseColumnNames: user_profile_id
+            constraintName: fk_user_interests_profile
+            referencedTableSchemaName: users
+            referencedTableName: user_profiles
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableSchemaName: users
+            baseTableName: user_interests
+            baseColumnNames: interest_id
+            constraintName: fk_user_interests_interest
+            referencedTableSchemaName: users
+            referencedTableName: interests
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - createIndex:
+            schemaName: users
+            tableName: user_interests
+            indexName: idx_user_interests_interest
+            columns:
+              - column:
+                  name: interest_id
