@@ -31,6 +31,8 @@ public class Invitation {
     }
     @PrePersist
     void onCreate() { createdAt = Instant.now(); }
+    public void accept() { status = InvitationStatus.ACCEPTED; }
+    public void decline() { status = InvitationStatus.DECLINED; }
     public UUID getId() { return id; }
     public UUID getEventId() { return eventId; }
     public UUID getInviteeUserId() { return inviteeUserId; }

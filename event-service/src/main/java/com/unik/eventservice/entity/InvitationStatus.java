@@ -1,5 +1,7 @@
 package com.unik.eventservice.entity;
 
 public enum InvitationStatus {
-    PENDING
+    PENDING,
+    ACCEPTED,
+    DECLINED
 }

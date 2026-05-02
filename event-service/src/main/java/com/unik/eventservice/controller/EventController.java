@@ -58,6 +58,16 @@ public class EventController {
         return eventService.register(currentUserId(authentication), eventId);
     }
 
+    @PostMapping("/{eventId}/invitations/accept")
+    public RegistrationResponse acceptInvitation(Authentication authentication, @PathVariable UUID eventId) {
+        return eventService.acceptInvitation(currentUserId(authentication), eventId);
+    }
+
+    @PostMapping("/{eventId}/invitations/decline")
+    public InvitationResponse declineInvitation(Authentication authentication, @PathVariable UUID eventId) {
+        return eventService.declineInvitation(currentUserId(authentication), eventId);
+    }
+
     @GetMapping("/{eventId}/weather")
     public WeatherForecastResponse weather(@PathVariable UUID eventId) {
         return weatherService.forecast(eventId);

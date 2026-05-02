@@ -4,6 +4,7 @@ import com.unik.eventservice.dto.*;
 import com.unik.eventservice.entity.Event;
 import com.unik.eventservice.entity.EventRegistration;
 import com.unik.eventservice.entity.Invitation;
+import com.unik.eventservice.entity.InvitationStatus;
 import com.unik.eventservice.repository.EventRegistrationRepository;
 import com.unik.eventservice.repository.EventRepository;
 import com.unik.eventservice.repository.InvitationRepository;
@@ -21,12 +22,15 @@ public class EventService {
     private final EventRepository eventRepository;
     private final InvitationRepository invitationRepository;
     private final EventRegistrationRepository registrationRepository;
+    private final NotificationService notificationService;
 
     public EventService(EventRepository eventRepository, InvitationRepository invitationRepository,
-                        EventRegistrationRepository registrationRepository) {
+                        EventRegistrationRepository registrationRepository,
+                        NotificationService notificationService) {
         this.eventRepository = eventRepository;
         this.invitationRepository = invitationRepository;
         this.registrationRepository = registrationRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional(readOnly = true)
@@ -64,7 +68,9 @@ public class EventService {
                 .filter(inviteeId -> !invitationRepository.existsByEventIdAndInviteeUserId(eventId, inviteeId))
                 .map(inviteeId -> Invitation.create(eventId, inviteeId))
                 .toList();
-        return invitationRepository.saveAll(invitations).stream().map(this::toResponse).toList();
+        List<Invitation> saved = invitationRepository.saveAll(invitations);
+        saved.forEach(invitation -> notificationService.eventInvitation(invitation.getInviteeUserId(), event));
+        return saved.stream().map(this::toResponse).toList();
     }
 
     @Transactional(readOnly = true)
@@ -79,9 +85,34 @@ public class EventService {
         if (event.getOrganizerId().equals(userId)) {
             throw new AccessDeniedException("Event organizer cannot register as participant for own event");
         }
-        EventRegistration registration = registrationRepository.findByEventIdAndUserId(eventId, userId)
-                .orElseGet(() -> EventRegistration.create(eventId, userId, randomRole()));
-        return toResponse(registrationRepository.save(registration));
+        return registrationRepository.findByEventIdAndUserId(eventId, userId)
+                .map(this::toResponse)
+                .orElseGet(() -> {
+                    EventRegistration registration = registrationRepository.save(
+                            EventRegistration.create(eventId, userId, randomRole()));
+                    notificationService.eventRegistration(userId, event);
+                    return toResponse(registration);
+                });
+    }
+
+    @Transactional
+    public RegistrationResponse acceptInvitation(UUID userId, UUID eventId) {
+        Invitation invitation = invitationRepository.findByEventIdAndInviteeUserId(eventId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Invitation not found"));
+        if (invitation.getStatus() == InvitationStatus.DECLINED) {
+            throw new IllegalArgumentException("Invitation was declined");
+        }
+        invitation.accept();
+        invitationRepository.save(invitation);
+        return register(userId, eventId);
+    }
+
+    @Transactional
+    public InvitationResponse declineInvitation(UUID userId, UUID eventId) {
+        Invitation invitation = invitationRepository.findByEventIdAndInviteeUserId(eventId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Invitation not found"));
+        invitation.decline();
+        return toResponse(invitationRepository.save(invitation));
     }
 
     private Event load(UUID eventId) {
