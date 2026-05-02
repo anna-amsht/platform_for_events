@@ -1,14 +1,14 @@
 databaseChangeLog:
   - changeSet:
-      id: auth-001-create-schema
-      author: unik
+      id: auth-create-schema
+      author: Anna
       changes:
         - sql:
             sql: CREATE SCHEMA IF NOT EXISTS auth
 
   - changeSet:
-      id: auth-002-users
-      author: unik
+      id: auth-users
+      author: Anna
       changes:
         - createTable:
             schemaName: auth
@@ -43,8 +43,8 @@ databaseChangeLog:
                     nullable: false
 
   - changeSet:
-      id: auth-003-oauth-accounts
-      author: unik
+      id: auth-oauth-accounts
+      author: Anna
       changes:
         - createTable:
             schemaName: auth
@@ -90,3 +90,18 @@ databaseChangeLog:
             referencedTableName: users
             referencedColumnNames: id
             onDelete: CASCADE
+
+  - changeSet:
+      id: auth-users-account-role
+      author: Codex
+      changes:
+        - addColumn:
+            schemaName: auth
+            tableName: users
+            columns:
+              - column:
+                  name: account_role
+                  type: varchar(32)
+                  defaultValue: PARTICIPANT
+                  constraints:
+                    nullable: false

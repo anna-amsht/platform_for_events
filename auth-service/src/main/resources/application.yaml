@@ -5,6 +5,17 @@ server:
 spring:
   application:
     name: auth-service
+  config:
+    import: optional:vault://
+  cloud:
+    vault:
+      enabled: ${VAULT_ENABLED:true}
+      uri: ${VAULT_ADDR:http://localhost:8200}
+      token: ${VAULT_TOKEN:}
+      kv:
+        enabled: true
+        backend: secret
+        application-name: ${spring.application.name}
   datasource:
     url: jdbc:postgresql://localhost:5432/events_platform
     username: ${DB_USERNAME:postgres}
@@ -27,7 +38,7 @@ spring:
           vk:
             provider: vk
             client-id: ${VK_CLIENT_ID:__off__}
-            client-secret: ${VK_CLIENT_SECRET:__off__}
+            client-secret: ${VK_CLIENT_SECRET}
             authorization-grant-type: authorization_code
             redirect-uri: "${app.oauth2.callback-base-url:http://localhost:8081}/login/oauth2/code/{registrationId}"
             scope: email
@@ -52,9 +63,11 @@ management:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+    secret: ${JWT_SECRET}
     expiration-ms: ${JWT_EXPIRATION_MS:3600000}
   frontend:
     url: ${FRONTEND_URL:http://localhost:5173}
   oauth2:
     callback-base-url: ${OAUTH2_CALLBACK_BASE_URL:http://localhost:8081}
+  internal:
+    token: ${INTERNAL_SERVICE_TOKEN}
