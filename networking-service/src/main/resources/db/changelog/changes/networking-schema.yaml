@@ -1,0 +1,29 @@
+databaseChangeLog:
+  - changeSet:
+      id: networking-create-schema
+      author: Codex
+      changes:
+        - sql:
+            sql: CREATE SCHEMA IF NOT EXISTS networking
+  - changeSet:
+      id: networking-chat-messages
+      author: Codex
+      changes:
+        - createTable:
+            schemaName: networking
+            tableName: chat_messages
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: event_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: role_name, type: varchar(40), constraints: { nullable: false } }
+              - column: { name: sender_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: content, type: varchar(2000), constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+        - createIndex:
+            schemaName: networking
+            tableName: chat_messages
+            indexName: idx_chat_messages_room
+            columns:
+              - column: { name: event_id }
+              - column: { name: role_name }
+              - column: { name: created_at }
