@@ -35,12 +35,12 @@ public class EventService {
 
     @Transactional(readOnly = true)
     public List<EventResponse> findAll() {
-        return eventRepository.findAll().stream().map(this::toResponse).toList();
+        return eventRepository.findAllByCancelledAtIsNull().stream().map(this::toResponse).toList();
     }
 
     @Transactional(readOnly = true)
     public EventResponse get(UUID eventId) {
-        return toResponse(load(eventId));
+        return toResponse(loadActive(eventId));
     }
 
     @Transactional
@@ -53,7 +53,7 @@ public class EventService {
     @Transactional
     public EventResponse update(UUID userId, UUID eventId, CreateEventRequest request) {
         validateDates(request);
-        Event event = load(eventId);
+        Event event = loadActive(eventId);
         requireOrganizer(userId, event);
         event.update(request.title(), request.description(), request.location(), request.latitude(),
                 request.longitude(), request.startsAt(), request.endsAt());
@@ -62,7 +62,7 @@ public class EventService {
 
     @Transactional
     public List<InvitationResponse> invite(UUID userId, UUID eventId, InviteUsersRequest request) {
-        Event event = load(eventId);
+        Event event = loadActive(eventId);
         requireOrganizer(userId, event);
         List<Invitation> invitations = request.userIds().stream()
                 .filter(inviteeId -> !invitationRepository.existsByEventIdAndInviteeUserId(eventId, inviteeId))
@@ -75,13 +75,13 @@ public class EventService {
 
     @Transactional(readOnly = true)
     public List<InvitationResponse> invitations(UUID userId, UUID eventId) {
-        requireOrganizer(userId, load(eventId));
+        requireOrganizer(userId, loadActive(eventId));
         return invitationRepository.findAllByEventId(eventId).stream().map(this::toResponse).toList();
     }
 
     @Transactional
     public RegistrationResponse register(UUID userId, UUID eventId) {
-        Event event = load(eventId);
+        Event event = loadActive(eventId);
         if (event.getOrganizerId().equals(userId)) {
             throw new AccessDeniedException("Event organizer cannot register as participant for own event");
         }
@@ -95,12 +95,45 @@ public class EventService {
                 });
     }
 
+    @Transactional(readOnly = true)
+    public List<RegistrationResponse> myRegistrations(UUID userId) {
+        return registrationRepository.findAllByUserId(userId).stream()
+                .filter(registration -> eventRepository.findById(registration.getEventId())
+                        .map(event -> !event.isCancelled())
+                        .orElse(false))
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional
+    public void cancelRegistration(UUID userId, UUID eventId) {
+        loadActive(eventId);
+        EventRegistration registration = registrationRepository.findByEventIdAndUserId(eventId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Registration not found"));
+        registrationRepository.delete(registration);
+    }
+
+    @Transactional
+    public void cancelEvent(UUID userId, UUID eventId) {
+        Event event = loadActive(eventId);
+        requireOrganizer(userId, event);
+        List<EventRegistration> registrations = registrationRepository.findAllByEventId(eventId);
+        registrations.forEach(registration -> notificationService.eventCancelled(registration.getUserId(), event));
+        registrationRepository.deleteAll(registrations);
+        event.cancel();
+        eventRepository.save(event);
+    }
+
     @Transactional
     public RegistrationResponse acceptInvitation(UUID userId, UUID eventId) {
+        loadActive(eventId);
         Invitation invitation = invitationRepository.findByEventIdAndInviteeUserId(eventId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Invitation not found"));
         if (invitation.getStatus() == InvitationStatus.DECLINED) {
             throw new IllegalArgumentException("Invitation was declined");
+        }
+        if (invitation.getStatus() == InvitationStatus.ACCEPTED) {
+            return register(userId, eventId);
         }
         invitation.accept();
         invitationRepository.save(invitation);
@@ -109,14 +142,26 @@ public class EventService {
 
     @Transactional
     public InvitationResponse declineInvitation(UUID userId, UUID eventId) {
+        loadActive(eventId);
         Invitation invitation = invitationRepository.findByEventIdAndInviteeUserId(eventId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Invitation not found"));
+        if (invitation.getStatus() == InvitationStatus.ACCEPTED) {
+            throw new IllegalArgumentException("Invitation already accepted");
+        }
         invitation.decline();
         return toResponse(invitationRepository.save(invitation));
     }
 
     private Event load(UUID eventId) {
         return eventRepository.findById(eventId).orElseThrow(() -> new IllegalArgumentException("Event not found"));
+    }
+
+    private Event loadActive(UUID eventId) {
+        Event event = load(eventId);
+        if (event.isCancelled()) {
+            throw new IllegalArgumentException("Event was cancelled");
+        }
+        return event;
     }
 
     private void validateDates(CreateEventRequest request) {

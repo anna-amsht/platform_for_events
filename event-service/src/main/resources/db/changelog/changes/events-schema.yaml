@@ -117,3 +117,13 @@ databaseChangeLog:
             referencedTableName: events
             referencedColumnNames: id
             onDelete: SET NULL
+
+  - changeSet:
+      id: events-cancelled-at
+      author: Codex
+      changes:
+        - addColumn:
+            schemaName: events
+            tableName: events
+            columns:
+              - column: { name: cancelled_at, type: timestamptz }

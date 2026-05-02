@@ -27,6 +27,8 @@ public class Event {
     private Instant createdAt;
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+    @Column(name = "cancelled_at")
+    private Instant cancelledAt;
 
     protected Event() {}
 
@@ -48,6 +50,14 @@ public class Event {
         this.longitude = longitude;
         this.startsAt = startsAt;
         this.endsAt = endsAt;
+    }
+
+    public void cancel() {
+        this.cancelledAt = Instant.now();
+    }
+
+    public boolean isCancelled() {
+        return cancelledAt != null;
     }
 
     @PrePersist
@@ -79,4 +89,5 @@ public class Event {
     public Instant getEndsAt() { return endsAt; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+    public Instant getCancelledAt() { return cancelledAt; }
 }

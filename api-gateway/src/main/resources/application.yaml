@@ -43,6 +43,12 @@ spring:
             - Path=/api/events/**
           filters:
             - StripPrefix=2
+        - id: notification-service
+          uri: lb://event-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - StripPrefix=1
         - id: networking-service-rest
           uri: lb://networking-service
           predicates:

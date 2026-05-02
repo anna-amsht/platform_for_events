@@ -9,6 +9,7 @@ public record NotificationResponse(
         String title,
         String message,
         UUID eventId,
+        String invitationStatus,
         boolean read,
         Instant readAt,
         Instant createdAt

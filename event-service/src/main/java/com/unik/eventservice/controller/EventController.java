@@ -2,7 +2,6 @@ package com.unik.eventservice.controller;
 
 import com.unik.eventservice.dto.*;
 import com.unik.eventservice.service.EventService;
-import com.unik.eventservice.service.WeatherService;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -14,11 +13,9 @@ import java.util.UUID;
 @RequestMapping
 public class EventController {
     private final EventService eventService;
-    private final WeatherService weatherService;
 
-    public EventController(EventService eventService, WeatherService weatherService) {
+    public EventController(EventService eventService) {
         this.eventService = eventService;
-        this.weatherService = weatherService;
     }
 
     @GetMapping
@@ -58,6 +55,21 @@ public class EventController {
         return eventService.register(currentUserId(authentication), eventId);
     }
 
+    @GetMapping("/registrations/me")
+    public List<RegistrationResponse> myRegistrations(Authentication authentication) {
+        return eventService.myRegistrations(currentUserId(authentication));
+    }
+
+    @DeleteMapping("/{eventId}/registrations")
+    public void cancelRegistration(Authentication authentication, @PathVariable UUID eventId) {
+        eventService.cancelRegistration(currentUserId(authentication), eventId);
+    }
+
+    @DeleteMapping("/{eventId}")
+    public void cancelEvent(Authentication authentication, @PathVariable UUID eventId) {
+        eventService.cancelEvent(currentUserId(authentication), eventId);
+    }
+
     @PostMapping("/{eventId}/invitations/accept")
     public RegistrationResponse acceptInvitation(Authentication authentication, @PathVariable UUID eventId) {
         return eventService.acceptInvitation(currentUserId(authentication), eventId);
@@ -66,11 +78,6 @@ public class EventController {
     @PostMapping("/{eventId}/invitations/decline")
     public InvitationResponse declineInvitation(Authentication authentication, @PathVariable UUID eventId) {
         return eventService.declineInvitation(currentUserId(authentication), eventId);
-    }
-
-    @GetMapping("/{eventId}/weather")
-    public WeatherForecastResponse weather(@PathVariable UUID eventId) {
-        return weatherService.forecast(eventId);
     }
 
     private UUID currentUserId(Authentication authentication) {
