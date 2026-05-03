@@ -8,6 +8,12 @@ databaseChangeLog:
   - changeSet:
       id: ai-chat-sessions
       author: Codex
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                schemaName: ai
+                tableName: chat_sessions
       changes:
         - createTable:
             schemaName: ai
@@ -27,6 +33,12 @@ databaseChangeLog:
   - changeSet:
       id: ai-chat-messages
       author: Codex
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                schemaName: ai
+                tableName: chat_messages
       changes:
         - createTable:
             schemaName: ai

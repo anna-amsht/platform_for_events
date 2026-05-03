@@ -8,6 +8,12 @@ databaseChangeLog:
   - changeSet:
       id: events-events
       author: Codex
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                schemaName: events
+                tableName: events
       changes:
         - createTable:
             schemaName: events
@@ -33,6 +39,12 @@ databaseChangeLog:
   - changeSet:
       id: events-invitations
       author: Codex
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                schemaName: events
+                tableName: invitations
       changes:
         - createTable:
             schemaName: events
@@ -60,6 +72,12 @@ databaseChangeLog:
   - changeSet:
       id: events-registrations
       author: Codex
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                schemaName: events
+                tableName: registrations
       changes:
         - createTable:
             schemaName: events
@@ -88,6 +106,12 @@ databaseChangeLog:
   - changeSet:
       id: events-notifications
       author: Codex
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                schemaName: events
+                tableName: notifications
       changes:
         - createTable:
             schemaName: events
@@ -121,6 +145,13 @@ databaseChangeLog:
   - changeSet:
       id: events-cancelled-at
       author: Codex
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                schemaName: events
+                tableName: events
+                columnName: cancelled_at
       changes:
         - addColumn:
             schemaName: events

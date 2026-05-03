@@ -2,6 +2,12 @@ databaseChangeLog:
   - changeSet:
       id: users-user-profiles
       author: Anna
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                schemaName: users
+                tableName: user_profiles
       changes:
         - createTable:
             schemaName: users
@@ -75,6 +81,12 @@ databaseChangeLog:
   - changeSet:
       id: users-interests
       author: Anna
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                schemaName: users
+                tableName: interests
       changes:
         - createTable:
             schemaName: users
@@ -114,6 +126,12 @@ databaseChangeLog:
   - changeSet:
       id: users-user-interests
       author: Anna
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                schemaName: users
+                tableName: user_interests
       changes:
         - createTable:
             schemaName: users

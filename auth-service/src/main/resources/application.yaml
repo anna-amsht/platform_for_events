@@ -18,8 +18,8 @@ spring:
         application-name: ${spring.application.name}
   datasource:
     url: jdbc:postgresql://localhost:5432/events_platform
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
   jpa:
     open-in-view: false
     hibernate:

@@ -60,6 +60,19 @@ public class EventController {
         return eventService.myRegistrations(currentUserId(authentication));
     }
 
+    @GetMapping("/{eventId}/registrations")
+    public List<RegistrationResponse> eventRegistrations(Authentication authentication, @PathVariable UUID eventId) {
+        return eventService.eventRegistrations(currentUserId(authentication), eventId);
+    }
+
+    @PatchMapping("/{eventId}/registrations/{participantId}/role")
+    public RegistrationResponse updateRegistrationRole(Authentication authentication,
+                                                       @PathVariable UUID eventId,
+                                                       @PathVariable UUID participantId,
+                                                       @Valid @RequestBody UpdateRegistrationRoleRequest request) {
+        return eventService.updateRegistrationRole(currentUserId(authentication), eventId, participantId, request);
+    }
+
     @DeleteMapping("/{eventId}/registrations")
     public void cancelRegistration(Authentication authentication, @PathVariable UUID eventId) {
         eventService.cancelRegistration(currentUserId(authentication), eventId);

@@ -56,6 +56,17 @@ public class NotificationService {
         ));
     }
 
+    @Transactional
+    public void eventRoleChanged(UUID participantUserId, Event event, String roleName) {
+        notificationRepository.save(Notification.create(
+                participantUserId,
+                NotificationType.EVENT_ROLE_CHANGED,
+                "Your event role was changed",
+                "Your role for \"" + event.getTitle() + "\" is now " + roleName + ".",
+                event.getId()
+        ));
+    }
+
     @Transactional(readOnly = true)
     public List<NotificationResponse> list(UUID userId) {
         return notificationRepository.findAllByRecipientUserIdOrderByCreatedAtDesc(userId).stream()

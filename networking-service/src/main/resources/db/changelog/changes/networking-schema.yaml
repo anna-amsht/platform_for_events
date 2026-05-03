@@ -8,6 +8,12 @@ databaseChangeLog:
   - changeSet:
       id: networking-chat-messages
       author: Codex
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                schemaName: networking
+                tableName: chat_messages
       changes:
         - createTable:
             schemaName: networking

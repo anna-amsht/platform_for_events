@@ -9,6 +9,12 @@ databaseChangeLog:
   - changeSet:
       id: auth-users
       author: Anna
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                schemaName: auth
+                tableName: users
       changes:
         - createTable:
             schemaName: auth
@@ -45,6 +51,12 @@ databaseChangeLog:
   - changeSet:
       id: auth-oauth-accounts
       author: Anna
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                schemaName: auth
+                tableName: oauth_accounts
       changes:
         - createTable:
             schemaName: auth
@@ -94,6 +106,13 @@ databaseChangeLog:
   - changeSet:
       id: auth-users-account-role
       author: Codex
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                schemaName: auth
+                tableName: users
+                columnName: account_role
       changes:
         - addColumn:
             schemaName: auth

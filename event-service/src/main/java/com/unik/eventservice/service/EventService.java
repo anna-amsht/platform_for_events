@@ -105,6 +105,35 @@ public class EventService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<RegistrationResponse> eventRegistrations(UUID userId, UUID eventId) {
+        loadActive(eventId);
+        requireLeader(userId, eventId);
+        return registrationRepository.findAllByEventId(eventId).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional
+    public RegistrationResponse updateRegistrationRole(UUID userId, UUID eventId, UUID participantId,
+                                                       UpdateRegistrationRoleRequest request) {
+        Event event = loadActive(eventId);
+        requireLeader(userId, eventId);
+        if (userId.equals(participantId)) {
+            throw new AccessDeniedException("Leader cannot change own role");
+        }
+        String roleName = request.roleName().trim().toUpperCase();
+        if (!ROLES.contains(roleName)) {
+            throw new IllegalArgumentException("Unsupported event role");
+        }
+        EventRegistration registration = registrationRepository.findByEventIdAndUserId(eventId, participantId)
+                .orElseThrow(() -> new IllegalArgumentException("Registration not found"));
+        registration.changeRole(roleName);
+        EventRegistration saved = registrationRepository.save(registration);
+        notificationService.eventRoleChanged(participantId, event, roleName);
+        return toResponse(saved);
+    }
+
     @Transactional
     public void cancelRegistration(UUID userId, UUID eventId) {
         loadActive(eventId);
@@ -173,6 +202,14 @@ public class EventService {
     private void requireOrganizer(UUID userId, Event event) {
         if (!event.getOrganizerId().equals(userId)) {
             throw new AccessDeniedException("Only event organizer can perform this operation");
+        }
+    }
+
+    private void requireLeader(UUID userId, UUID eventId) {
+        EventRegistration registration = registrationRepository.findByEventIdAndUserId(eventId, userId)
+                .orElseThrow(() -> new AccessDeniedException("Only event leader can perform this operation"));
+        if (!"LEADER".equals(registration.getRoleName())) {
+            throw new AccessDeniedException("Only event leader can perform this operation");
         }
     }
 

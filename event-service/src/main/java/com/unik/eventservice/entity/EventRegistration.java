@@ -30,6 +30,7 @@ public class EventRegistration {
     }
     @PrePersist
     void onCreate() { createdAt = Instant.now(); }
+    public void changeRole(String roleName) { this.roleName = roleName; }
     public UUID getId() { return id; }
     public UUID getEventId() { return eventId; }
     public UUID getUserId() { return userId; }
