@@ -6,7 +6,7 @@ import com.unik.networkingservice.service.ChatService;
 import jakarta.validation.Valid;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,8 +16,16 @@ import java.util.UUID;
 @RequestMapping("/rooms")
 public class ChatController {
     private final ChatService chatService;
-    public ChatController(ChatService chatService) {
+    private final SimpMessagingTemplate messagingTemplate;
+
+    public ChatController(ChatService chatService, SimpMessagingTemplate messagingTemplate) {
         this.chatService = chatService;
+        this.messagingTemplate = messagingTemplate;
+    }
+
+    @GetMapping("/available/{roleName}")
+    public List<String> availableRooms(@PathVariable String roleName) {
+        return chatService.availableRooms(roleName);
     }
 
     @GetMapping("/{eventId}/{roleName}/messages")
@@ -45,16 +53,25 @@ public class ChatController {
     }
 
     @MessageMapping("/rooms/{eventId}/{roleName}")
-    @SendTo("/topic/rooms/{eventId}/{roleName}")
-    public ChatMessageResponse sendWs(@DestinationVariable UUID eventId, @DestinationVariable String roleName,
-                                      @Valid ChatMessageRequest request) {
-        return chatService.send(eventId, roleName, request);
+    public void sendWs(@DestinationVariable UUID eventId, @DestinationVariable String roleName,
+                       @Valid ChatMessageRequest request) {
+        ChatMessageResponse response = chatService.send(eventId, roleName, request);
+        broadcast(eventId, roleName, response);
     }
 
     @MessageMapping("/rooms/{eventId}/general")
-    @SendTo("/topic/rooms/{eventId}/general")
-    public ChatMessageResponse sendGeneralWs(@DestinationVariable UUID eventId,
-                                             @Valid ChatMessageRequest request) {
-        return chatService.send(eventId, ChatService.GENERAL_ROOM, request);
+    public void sendGeneralWs(@DestinationVariable UUID eventId, @Valid ChatMessageRequest request) {
+        ChatMessageResponse response = chatService.send(eventId, ChatService.GENERAL_ROOM, request);
+        broadcast(eventId, "general", response);
+    }
+
+    private void broadcast(UUID eventId, String requestedRoom, ChatMessageResponse response) {
+        String canonicalDestination = "/topic/rooms/" + eventId + "/" + response.roleName();
+        messagingTemplate.convertAndSend(canonicalDestination, response);
+
+        String requestedDestination = "/topic/rooms/" + eventId + "/" + requestedRoom;
+        if (!canonicalDestination.equals(requestedDestination)) {
+            messagingTemplate.convertAndSend(requestedDestination, response);
+        }
     }
 }

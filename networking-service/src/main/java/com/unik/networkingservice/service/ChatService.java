@@ -34,6 +34,10 @@ public class ChatService {
                 .toList();
     }
 
+    public List<String> availableRooms(String roleName) {
+        return ChatRoomType.availableFor(roleName);
+    }
+
     private String normalizeRole(String roleName) {
         return ChatRoomType.from(roleName.trim()).name();
     }
