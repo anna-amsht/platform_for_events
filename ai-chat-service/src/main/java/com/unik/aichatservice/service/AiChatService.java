@@ -1,6 +1,5 @@
 package com.unik.aichatservice.service;
 
-import com.unik.aichatservice.config.AppProperties;
 import com.unik.aichatservice.dto.ChatMessageResponse;
 import com.unik.aichatservice.dto.ChatRequest;
 import com.unik.aichatservice.dto.ChatSessionResponse;
@@ -8,30 +7,24 @@ import com.unik.aichatservice.entity.ChatMessage;
 import com.unik.aichatservice.entity.ChatSession;
 import com.unik.aichatservice.repository.ChatMessageRepository;
 import com.unik.aichatservice.repository.ChatSessionRepository;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Flux;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 public class AiChatService {
-    private final AppProperties properties;
     private final ChatSessionRepository sessionRepository;
     private final ChatMessageRepository messageRepository;
-    private final ObjectProvider<ChatClient.Builder> chatClientBuilderProvider;
+    private final InstructionAnswerService instructionAnswerService;
 
-    public AiChatService(AppProperties properties, ChatSessionRepository sessionRepository,
+    public AiChatService(ChatSessionRepository sessionRepository,
                          ChatMessageRepository messageRepository,
-                         ObjectProvider<ChatClient.Builder> chatClientBuilderProvider) {
-        this.properties = properties;
+                         InstructionAnswerService instructionAnswerService) {
         this.sessionRepository = sessionRepository;
         this.messageRepository = messageRepository;
-        this.chatClientBuilderProvider = chatClientBuilderProvider;
+        this.instructionAnswerService = instructionAnswerService;
     }
 
     @Transactional(readOnly = true)
@@ -56,22 +49,11 @@ public class AiChatService {
         return session.getId();
     }
 
-    public Flux<String> streamAssistant(UUID sessionId, String userMessage) {
-        Flux<String> stream = aiEnabled()
-                ? chatClientBuilderProvider.getObject().build().prompt().user(userMessage).stream().content()
-                : Flux.just("AI chat is disabled. Set APP_AI_ENABLED=true and OPENAI_API_KEY to enable Spring AI responses.");
-        AtomicReference<StringBuilder> full = new AtomicReference<>(new StringBuilder());
-        return stream.doOnNext(chunk -> full.get().append(chunk))
-                .doOnComplete(() -> saveAssistantMessage(sessionId, full.get().toString()));
-    }
-
     @Transactional
-    public void saveAssistantMessage(UUID sessionId, String content) {
-        messageRepository.save(ChatMessage.create(sessionId, "ASSISTANT", content));
-    }
-
-    private boolean aiEnabled() {
-        return properties.ai().enabled() && chatClientBuilderProvider.getIfAvailable() != null;
+    public String streamAssistant(UUID sessionId, String userMessage) {
+        String answer = instructionAnswerService.answer(userMessage);
+        messageRepository.save(ChatMessage.create(sessionId, "ASSISTANT", answer));
+        return answer;
     }
 
     private ChatSession loadSession(UUID userId, UUID sessionId) {

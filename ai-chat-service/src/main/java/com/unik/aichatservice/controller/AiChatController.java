@@ -8,7 +8,6 @@ import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Flux;
 
 import java.util.List;
 import java.util.UUID;
@@ -31,8 +30,8 @@ public class AiChatController {
         return aiChatService.history(currentUserId(authentication), sessionId);
     }
 
-    @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> stream(Authentication authentication, @Valid @RequestBody ChatRequest request) {
+    @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_PLAIN_VALUE)
+    public String stream(Authentication authentication, @Valid @RequestBody ChatRequest request) {
         UUID sessionId = aiChatService.acceptUserMessage(currentUserId(authentication), request);
         return aiChatService.streamAssistant(sessionId, request.message());
     }
