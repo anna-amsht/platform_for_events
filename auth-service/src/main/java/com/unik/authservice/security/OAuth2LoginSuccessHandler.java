@@ -37,7 +37,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         OAuthProvider provider = OAuthProvider.valueOf(oauthToken.getAuthorizedClientRegistrationId().toUpperCase());
         OAuth2User principal = oauthToken.getPrincipal();
 
-        String externalUserId = String.valueOf(principal.getAttribute("id"));
+        Object externalUserIdAttribute = principal.getAttribute("id");
+        String externalUserId = String.valueOf(externalUserIdAttribute);
         String email = principal.getAttribute("email");
         TokenResponse token = authService.loginWithOAuth(provider, externalUserId, email);
 
@@ -46,6 +47,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 .queryParam("access_token", token.accessToken())
                 .queryParam("token_type", token.tokenType())
                 .queryParam("expires_in", token.expiresInSeconds())
+                .queryParam("role", token.role())
                 .build()
                 .toUriString();
 

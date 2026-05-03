@@ -2,7 +2,7 @@ package com.unik.authservice.config;
 
 import com.unik.authservice.security.JwtAuthenticationFilter;
 import com.unik.authservice.security.OAuth2LoginSuccessHandler;
-import com.unik.authservice.security.VkOAuth2UserService;
+import com.unik.authservice.security.GitHubOAuth2UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -18,16 +18,16 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
-    private final VkOAuth2UserService vkOAuth2UserService;
+    private final GitHubOAuth2UserService gitHubOAuth2UserService;
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter,
             OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler,
-            VkOAuth2UserService vkOAuth2UserService
+            GitHubOAuth2UserService gitHubOAuth2UserService
     ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
-        this.vkOAuth2UserService = vkOAuth2UserService;
+        this.gitHubOAuth2UserService = gitHubOAuth2UserService;
     }
 
     @Bean
@@ -43,7 +43,7 @@ public class SecurityConfig {
                 ).permitAll()
                 .anyRequest().authenticated());
         http.oauth2Login(oauth2 -> oauth2
-                .userInfoEndpoint(userInfo -> userInfo.userService(vkOAuth2UserService))
+                .userInfoEndpoint(userInfo -> userInfo.userService(gitHubOAuth2UserService))
                 .successHandler(oAuth2LoginSuccessHandler));
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

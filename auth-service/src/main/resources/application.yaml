@@ -31,23 +31,6 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.yaml
     default-schema: auth
     liquibase-schema: public
-  security:
-    oauth2:
-      client:
-        registration:
-          vk:
-            provider: vk
-            client-id: ${VK_CLIENT_ID:__off__}
-            client-secret: ${VK_CLIENT_SECRET}
-            authorization-grant-type: authorization_code
-            redirect-uri: "${app.oauth2.callback-base-url:http://localhost:8081}/login/oauth2/code/{registrationId}"
-            scope: email
-            client-name: VK
-        provider:
-          vk:
-            authorization-uri: https://oauth.vk.com/authorize
-            token-uri: https://oauth.vk.com/access_token
-
 eureka:
   client:
     service-url:
@@ -68,6 +51,9 @@ app:
   frontend:
     url: ${FRONTEND_URL:http://localhost:5173}
   oauth2:
-    callback-base-url: ${OAUTH2_CALLBACK_BASE_URL:http://localhost:8081}
+    callback-base-url: ${OAUTH2_CALLBACK_BASE_URL:http://localhost:8080/api/auth}
+  github:
+    client-id: ${APP_GITHUB_CLIENT_ID:__off__}
+    client-secret: ${APP_GITHUB_CLIENT_SECRET:__off__}
   internal:
-    token: ${INTERNAL_SERVICE_TOKEN}
+    token: ${INTERNAL_SERVICE_TOKEN:test-internal-token}
