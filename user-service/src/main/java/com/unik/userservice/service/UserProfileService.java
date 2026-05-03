@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 @Service
 public class UserProfileService {
 
-    private static final Pattern NON_LATIN_OR_DIGIT = Pattern.compile("[^a-z0-9]+");
+    private static final Pattern NON_LETTER_OR_DIGIT = Pattern.compile("[^\\p{L}\\p{N}]+");
 
     private final UserProfileRepository userProfileRepository;
     private final InterestRepository interestRepository;
@@ -167,7 +167,7 @@ public class UserProfileService {
         String normalized = Normalizer.normalize(rawValue, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}+", "")
                 .toLowerCase(Locale.ROOT);
-        String slug = NON_LATIN_OR_DIGIT.matcher(normalized).replaceAll("-")
+        String slug = NON_LETTER_OR_DIGIT.matcher(normalized).replaceAll("-")
                 .replaceAll("^-+|-+$", "");
         if (slug.isBlank()) {
             throw new IllegalArgumentException("Interest value is not supported: " + rawValue);

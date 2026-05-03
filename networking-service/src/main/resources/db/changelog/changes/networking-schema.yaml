@@ -33,3 +33,24 @@ databaseChangeLog:
               - column: { name: event_id }
               - column: { name: role_name }
               - column: { name: created_at }
+  - changeSet:
+      id: networking-event-reports
+      author: Codex
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                schemaName: networking
+                tableName: event_reports
+      changes:
+        - createTable:
+            schemaName: networking
+            tableName: event_reports
+            columns:
+              - column: { name: event_id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: author_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: file_name, type: varchar(255), constraints: { nullable: false } }
+              - column: { name: content_type, type: varchar(120), constraints: { nullable: false } }
+              - column: { name: content_data, type: text, constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
