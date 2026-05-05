@@ -60,15 +60,12 @@ jobs:
       - name: Analyze selected services with SonarQube
         if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
         run: >
-          mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:5.5.0.6356:sonar
+          mvn -B -pl "${SONAR_SERVICES}"
+          org.sonarsource.scanner.maven:sonar-maven-plugin:5.5.0.6356:sonar
           -Dsonar.host.url="${SONAR_HOST_URL}"
           -Dsonar.token="${SONAR_TOKEN}"
           -Dsonar.projectKey="${SONAR_PROJECT_KEY}"
-          -Dsonar.sources=auth-service/src/main/java,user-service/src/main/java,event-service/src/main/java
-          -Dsonar.tests=auth-service/src/test/java,user-service/src/test/java,event-service/src/test/java
-          -Dsonar.java.binaries=auth-service/target/classes,user-service/target/classes,event-service/target/classes
-          -Dsonar.java.test.binaries=auth-service/target/test-classes,user-service/target/test-classes,event-service/target/test-classes
-          -Dsonar.coverage.jacoco.xmlReportPaths=auth-service/target/site/jacoco/jacoco.xml,user-service/target/site/jacoco/jacoco.xml,event-service/target/site/jacoco/jacoco.xml
+          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
 
       - name: Require SonarQube secrets
         if: ${{ env.SONAR_TOKEN == '' || env.SONAR_HOST_URL == '' }}
