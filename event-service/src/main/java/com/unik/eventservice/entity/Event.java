@@ -23,6 +23,10 @@ public class Event {
     private Instant startsAt;
     @Column(name = "ends_at", nullable = false)
     private Instant endsAt;
+    @Column(nullable = false)
+    private Integer capacity;
+    @Column(name = "available_seats", nullable = false)
+    private Integer availableSeats;
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
     @Column(name = "updated_at", nullable = false)
@@ -33,16 +37,19 @@ public class Event {
     protected Event() {}
 
     public static Event create(UUID organizerId, String title, String description, String location, Double latitude,
-                               Double longitude, Instant startsAt, Instant endsAt) {
+                               Double longitude, Instant startsAt, Instant endsAt, Integer capacity) {
         Event event = new Event();
         event.id = UUID.randomUUID();
         event.organizerId = organizerId;
-        event.update(title, description, location, latitude, longitude, startsAt, endsAt);
+        event.update(title, description, location, latitude, longitude, startsAt, endsAt, capacity, 0L);
         return event;
     }
 
     public void update(String title, String description, String location, Double latitude, Double longitude,
-                       Instant startsAt, Instant endsAt) {
+                       Instant startsAt, Instant endsAt, Integer capacity, long registeredParticipants) {
+        if (capacity < registeredParticipants) {
+            throw new IllegalArgumentException("Event capacity cannot be less than current registrations count");
+        }
         this.title = title.trim();
         this.description = normalize(description);
         this.location = normalize(location);
@@ -50,6 +57,21 @@ public class Event {
         this.longitude = longitude;
         this.startsAt = startsAt;
         this.endsAt = endsAt;
+        this.capacity = capacity;
+        this.availableSeats = capacity - Math.toIntExact(registeredParticipants);
+    }
+
+    public void reserveSeat() {
+        if (availableSeats <= 0) {
+            throw new IllegalArgumentException("No available seats for event");
+        }
+        availableSeats--;
+    }
+
+    public void releaseSeat() {
+        if (availableSeats < capacity) {
+            availableSeats++;
+        }
     }
 
     public void cancel() {
@@ -87,6 +109,8 @@ public class Event {
     public Double getLongitude() { return longitude; }
     public Instant getStartsAt() { return startsAt; }
     public Instant getEndsAt() { return endsAt; }
+    public Integer getCapacity() { return capacity; }
+    public Integer getAvailableSeats() { return availableSeats; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public Instant getCancelledAt() { return cancelledAt; }

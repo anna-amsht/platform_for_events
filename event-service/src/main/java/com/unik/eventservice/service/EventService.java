@@ -47,7 +47,8 @@ public class EventService {
     public EventResponse create(UUID organizerId, CreateEventRequest request) {
         validateDates(request);
         return toResponse(eventRepository.save(Event.create(organizerId, request.title(), request.description(),
-                request.location(), request.latitude(), request.longitude(), request.startsAt(), request.endsAt())));
+                request.location(), request.latitude(), request.longitude(), request.startsAt(), request.endsAt(),
+                request.capacity())));
     }
 
     @Transactional
@@ -55,8 +56,9 @@ public class EventService {
         validateDates(request);
         Event event = loadActive(eventId);
         requireOrganizer(userId, event);
+        long registeredParticipants = registrationRepository.countByEventId(eventId);
         event.update(request.title(), request.description(), request.location(), request.latitude(),
-                request.longitude(), request.startsAt(), request.endsAt());
+                request.longitude(), request.startsAt(), request.endsAt(), request.capacity(), registeredParticipants);
         return toResponse(eventRepository.save(event));
     }
 
@@ -81,13 +83,14 @@ public class EventService {
 
     @Transactional
     public RegistrationResponse register(UUID userId, UUID eventId) {
-        Event event = loadActive(eventId);
+        Event event = loadActiveForUpdate(eventId);
         if (event.getOrganizerId().equals(userId)) {
             throw new AccessDeniedException("Event organizer cannot register as participant for own event");
         }
         return registrationRepository.findByEventIdAndUserId(eventId, userId)
                 .map(this::toResponse)
                 .orElseGet(() -> {
+                    event.reserveSeat();
                     EventRegistration registration = registrationRepository.save(
                             EventRegistration.create(eventId, userId, randomRole()));
                     notificationService.eventRegistration(userId, event);
@@ -136,10 +139,11 @@ public class EventService {
 
     @Transactional
     public void cancelRegistration(UUID userId, UUID eventId) {
-        loadActive(eventId);
+        Event event = loadActiveForUpdate(eventId);
         EventRegistration registration = registrationRepository.findByEventIdAndUserId(eventId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Registration not found"));
         registrationRepository.delete(registration);
+        event.releaseSeat();
     }
 
     @Transactional
@@ -193,6 +197,15 @@ public class EventService {
         return event;
     }
 
+    private Event loadActiveForUpdate(UUID eventId) {
+        Event event = eventRepository.findByIdForUpdate(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+        if (event.isCancelled()) {
+            throw new IllegalArgumentException("Event was cancelled");
+        }
+        return event;
+    }
+
     private void validateDates(CreateEventRequest request) {
         if (!request.endsAt().isAfter(request.startsAt())) {
             throw new IllegalArgumentException("Event end time must be after start time");
@@ -220,7 +233,7 @@ public class EventService {
     private EventResponse toResponse(Event event) {
         return new EventResponse(event.getId(), event.getOrganizerId(), event.getTitle(), event.getDescription(),
                 event.getLocation(), event.getLatitude(), event.getLongitude(), event.getStartsAt(), event.getEndsAt(),
-                event.getCreatedAt(), event.getUpdatedAt());
+                event.getCapacity(), event.getAvailableSeats(), event.getCreatedAt(), event.getUpdatedAt());
     }
 
     private InvitationResponse toResponse(Invitation invitation) {
