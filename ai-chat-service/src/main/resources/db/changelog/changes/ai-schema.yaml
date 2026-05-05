@@ -1,0 +1,67 @@
+databaseChangeLog:
+  - changeSet:
+      id: ai-create-schema
+      author: Codex
+      changes:
+        - sql:
+            sql: CREATE SCHEMA IF NOT EXISTS ai
+  - changeSet:
+      id: ai-chat-sessions
+      author: Codex
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                schemaName: ai
+                tableName: chat_sessions
+      changes:
+        - createTable:
+            schemaName: ai
+            tableName: chat_sessions
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: user_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: title, type: varchar(200), constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - createIndex:
+            schemaName: ai
+            tableName: chat_sessions
+            indexName: idx_chat_sessions_user
+            columns:
+              - column: { name: user_id }
+  - changeSet:
+      id: ai-chat-messages
+      author: Codex
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                schemaName: ai
+                tableName: chat_messages
+      changes:
+        - createTable:
+            schemaName: ai
+            tableName: chat_messages
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: session_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: role, type: varchar(32), constraints: { nullable: false } }
+              - column: { name: content, type: varchar(4000), constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+        - addForeignKeyConstraint:
+            baseTableSchemaName: ai
+            baseTableName: chat_messages
+            baseColumnNames: session_id
+            constraintName: fk_ai_messages_session
+            referencedTableSchemaName: ai
+            referencedTableName: chat_sessions
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - createIndex:
+            schemaName: ai
+            tableName: chat_messages
+            indexName: idx_chat_messages_session
+            columns:
+              - column: { name: session_id }
+              - column: { name: created_at }

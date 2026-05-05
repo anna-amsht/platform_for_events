@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - changeSet:
+      id: users-create-schema
+      author: Anna
+      changes:
+        - sql:
+            sql: CREATE SCHEMA IF NOT EXISTS users

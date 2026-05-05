@@ -1,0 +1,57 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: ai-chat-service
+  config:
+    import: optional:vault://
+  cloud:
+    vault:
+      enabled: ${VAULT_ENABLED:true}
+      uri: ${VAULT_ADDR:http://localhost:8200}
+      token: ${VAULT_TOKEN:}
+      kv:
+        enabled: true
+        backend: secret
+        application-name: ${spring.application.name}
+  datasource:
+    url: jdbc:postgresql://localhost:5432/events_platform
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: ai
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    default-schema: ai
+    liquibase-schema: public
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:dummy}
+      chat:
+        options:
+          model: ${OPENAI_MODEL:gpt-4o-mini}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+  ai:
+    enabled: ${APP_AI_ENABLED:false}

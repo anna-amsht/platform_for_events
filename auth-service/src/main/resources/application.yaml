@@ -1,0 +1,59 @@
+server:
+  port: 8081
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: auth-service
+  config:
+    import: optional:vault://
+  cloud:
+    vault:
+      enabled: ${VAULT_ENABLED:true}
+      uri: ${VAULT_ADDR:http://localhost:8200}
+      token: ${VAULT_TOKEN:}
+      kv:
+        enabled: true
+        backend: secret
+        application-name: ${spring.application.name}
+  datasource:
+    url: jdbc:postgresql://localhost:5432/events_platform
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: auth
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    default-schema: auth
+    liquibase-schema: public
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: ${JWT_EXPIRATION_MS:3600000}
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:5173}
+  oauth2:
+    callback-base-url: ${OAUTH2_CALLBACK_BASE_URL:http://localhost:8080/api/auth}
+  github:
+    client-id: ${APP_GITHUB_CLIENT_ID:__off__}
+    client-secret: ${APP_GITHUB_CLIENT_SECRET:__off__}
+  internal:
+    token: ${INTERNAL_SERVICE_TOKEN:test-internal-token}

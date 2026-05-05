@@ -1,0 +1,83 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns:
+              - "http://localhost:*"
+              - "http://127.0.0.1:*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=2
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - StripPrefix=2
+        - id: event-service
+          uri: lb://event-service
+          predicates:
+            - Path=/api/events/**
+          filters:
+            - StripPrefix=2
+        - id: notification-service
+          uri: lb://event-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - StripPrefix=1
+        - id: networking-service-rest
+          uri: lb://networking-service
+          predicates:
+            - Path=/api/networking/**
+          filters:
+            - StripPrefix=2
+        - id: networking-service-ws
+          uri: lb:ws://networking-service
+          predicates:
+            - Path=/ws/networking/**
+        - id: ai-chat-service
+          uri: lb://ai-chat-service
+          predicates:
+            - Path=/api/ai/**
+          filters:
+            - StripPrefix=2
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: when_authorized

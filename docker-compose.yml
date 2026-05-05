@@ -1,0 +1,154 @@
+name: event-manager
+
+x-service-env: &service-env
+  DB_USERNAME: ${DB_USERNAME:-postgres}
+  DB_PASSWORD: ${DB_PASSWORD:-postgres}
+  JWT_SECRET: ${JWT_SECRET:-0123456789012345678901234567890123456789012345678901234567890123}
+  INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-test-internal-token}
+  VAULT_ENABLED: "false"
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+
+x-db-env: &db-env
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/events_platform
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: event-manager-postgres
+    environment:
+      POSTGRES_DB: events_platform
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  eureka-server:
+    build:
+      context: .
+      dockerfile: EurekaServer/Dockerfile
+    container_name: event-manager-eureka
+    environment:
+      EUREKA_INSTANCE_HOSTNAME: eureka-server
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8761/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    container_name: event-manager-auth
+    environment:
+      <<: [*service-env, *db-env]
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      OAUTH2_CALLBACK_BASE_URL: ${OAUTH2_CALLBACK_BASE_URL:-http://localhost:8080/api/auth}
+      APP_GITHUB_CLIENT_ID: ${APP_GITHUB_CLIENT_ID:-__off__}
+      APP_GITHUB_CLIENT_SECRET: ${APP_GITHUB_CLIENT_SECRET:-__off__}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    container_name: event-manager-user
+    environment:
+      <<: [*service-env, *db-env]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+
+  event-service:
+    build:
+      context: .
+      dockerfile: event-service/Dockerfile
+    container_name: event-manager-event
+    environment:
+      <<: [*service-env, *db-env]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+
+  networking-service:
+    build:
+      context: .
+      dockerfile: networking-service/Dockerfile
+    container_name: event-manager-networking
+    environment:
+      <<: [*service-env, *db-env]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    ports:
+      - "8084:8084"
+
+  ai-chat-service:
+    build:
+      context: .
+      dockerfile: ai-chat-service/Dockerfile
+    container_name: event-manager-ai-chat
+    environment:
+      <<: [*service-env, *db-env]
+      APP_AI_ENABLED: ${APP_AI_ENABLED:-false}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-dummy}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: event-manager-gateway
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      user-service:
+        condition: service_started
+      event-service:
+        condition: service_started
+      networking-service:
+        condition: service_started
+      ai-chat-service:
+        condition: service_started
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres-data:
